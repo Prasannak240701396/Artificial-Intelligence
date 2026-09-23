@@ -1,0 +1,77 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-[#0a0d14] text-[#f8fafc] font-sans antialiased overflow-x-hidden;
+  }
+}
+
+/* Custom Scrollbar for dense FinTech UI */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0a0d14;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #232d42;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #3b82f6;
+}
+
+/* Card Container & Overflow Safeguards */
+.finos-card {
+  @apply bg-[#111622] border border-[#232d42] rounded-md p-4 transition-all duration-200 hover:border-blue-500/30 overflow-hidden flex flex-col justify-between min-w-0;
+}
+
+.finos-card-compact {
+  @apply bg-[#111622] border border-[#232d42] rounded-md p-3 transition-all duration-200 hover:border-blue-500/30 overflow-hidden flex flex-col justify-between min-w-0;
+}
+
+/* Text and Number Overflow Utilities */
+.financial-value {
+  @apply font-mono font-bold tracking-tight text-white truncate max-w-full block whitespace-nowrap overflow-hidden text-ellipsis;
+}
+
+.financial-label {
+  @apply text-[11px] font-medium text-slate-400 uppercase tracking-wider font-mono truncate max-w-full block;
+}
+
+/* Financial Table Styling */
+.finos-table {
+  @apply w-full text-left border-collapse text-xs table-auto;
+}
+
+.finos-table th {
+  @apply bg-[#182030] text-slate-400 font-medium uppercase tracking-wider py-2.5 px-3 border-b border-[#232d42] sticky top-0 z-10 whitespace-nowrap;
+}
+
+.finos-table td {
+  @apply py-2.5 px-3 border-b border-[#1c2638] text-slate-200 font-mono transition-colors truncate max-w-[200px];
+}
+
+.finos-table tr:hover td {
+  @apply bg-[#182338];
+}
+
+/* Pulsing Status Dot */
+.status-dot-live {
+  @apply relative inline-flex h-2 w-2 rounded-full bg-emerald-500 flex-shrink-0;
+}
+.status-dot-live::after {
+  content: '';
+  @apply absolute -inset-0.5 rounded-full bg-emerald-500 animate-ping opacity-75;
+}
+
+.status-dot-sim {
+  @apply relative inline-flex h-2 w-2 rounded-full bg-amber-500 flex-shrink-0;
+}
+
