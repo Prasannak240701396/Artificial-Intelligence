@@ -1,6 +1,6 @@
 import React from 'react';
 import { Transaction } from '../types';
-import { X, ShieldAlert, CheckCircle2, Clock, Building2, UserCheck, Activity, AlertTriangle } from 'lucide-react';
+import { X, Clock, Activity, AlertTriangle } from 'lucide-react';
 
 interface TransactionDetailDrawerProps {
   transaction: Transaction | null;

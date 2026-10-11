@@ -1,6 +1,40 @@
 version: '3.8'
 
 services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: finos_backend
+    restart: always
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://finos_user:finos_password@postgres:5432/finos_db
+      - REDIS_URL=redis://redis:6379/0
+      - MARKET_DATA_MODE=SIMULATION
+      - SECRET_KEY=finos_production_secret_key_2026_institutional_grade
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - finos_network
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: finos_frontend
+    restart: always
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    networks:
+      - finos_network
+
   postgres:
     image: postgres:15-alpine
     container_name: finos_postgres
@@ -11,8 +45,15 @@ services:
       POSTGRES_DB: finos_db
     ports:
       - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U finos_user -d finos_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    networks:
+      - finos_network
 
   redis:
     image: redis:7-alpine
@@ -22,6 +63,12 @@ services:
       - "6379:6379"
     volumes:
       - redis_data:/data
+    networks:
+      - finos_network
+
+networks:
+  finos_network:
+    driver: bridge
 
 volumes:
   postgres_data:

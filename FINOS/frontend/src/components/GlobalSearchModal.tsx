@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, ArrowRight, CornerDownLeft, X, LayoutDashboard, PieChart, DollarSign, Wallet, CreditCard, ShieldAlert, BarChart3, Cpu, Bot, FlaskConical, FileText, History, Server, Settings } from 'lucide-react';
+import { Search, CornerDownLeft, X, LayoutDashboard, PieChart, DollarSign, Wallet, CreditCard, ShieldAlert, BarChart3, Cpu, Bot, FlaskConical, FileText, Server, Settings } from 'lucide-react';
 
 interface SearchItem {
   id: string;

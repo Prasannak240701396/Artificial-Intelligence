@@ -1,6 +1,6 @@
 import math
 import random
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, List, Any
 import requests
 
@@ -86,7 +86,7 @@ class SimulationMarketProvider(MarketDataProvider):
 
     def get_market_pulse(self) -> List[Dict[str, Any]]:
         results = []
-        now_str = datetime.utcnow().strftime("%H:%M:%S")
+        now_str = datetime.now(timezone.utc).strftime("%H:%M:%S")
 
         # Global market factor (macro shock / sentiment factor)
         macro_shock = random.gauss(0, 0.002)

@@ -1,12 +1,8 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import {
-  LayoutDashboard, TrendingUp, PieChart, DollarSign,
-  Wallet, ArrowRightLeft, CreditCard, ShieldAlert,
-  BarChart3, Cpu, Bot, FlaskConical, FileText,
-  History, Server, Settings, ChevronLeft, ChevronRight,
-  Activity
-} from 'lucide-react';
+import { LayoutDashboard, TrendingUp, DollarSign, Wallet, ArrowRightLeft, CreditCard, ShieldAlert, BarChart3, Cpu, FileText, Server, ChevronLeft, ChevronRight, Building2, Mail } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { BrandLogo } from './BrandLogo';
 
 interface SidebarProps {
   collapsed: boolean;
@@ -14,23 +10,29 @@ interface SidebarProps {
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle }) => {
-  const navItems = [
-    { name: 'Dashboard', path: '/', icon: LayoutDashboard },
-    { name: 'Market Intelligence', path: '/market-intelligence', icon: TrendingUp },
-    { name: 'Financial Overview', path: '/financial-overview', icon: PieChart },
-    { name: 'Cash Flow', path: '/cash-flow', icon: DollarSign },
-    { name: 'Budgets', path: '/budgets', icon: Wallet },
-    { name: 'Transactions', path: '/transactions', icon: ArrowRightLeft, badge: '120+' },
-    { name: 'Payments', path: '/payments', icon: CreditCard },
-    { name: 'Risk Analytics', path: '/risk-analytics', icon: ShieldAlert, alert: true },
-    { name: 'Forecasting', path: '/forecasting', icon: BarChart3 },
-    { name: 'AI Financial Planner', path: '/ai-planner', icon: Cpu },
-    { name: 'Agent Control Center', path: '/agent-control', icon: Bot, badge: '11' },
-    { name: 'Algorithm Lab', path: '/algorithm-lab', icon: FlaskConical },
-    { name: 'Reports', path: '/reports', icon: FileText },
-    { name: 'System Monitoring', path: '/system-monitoring', icon: Server },
-    { name: 'Settings', path: '/settings', icon: Settings },
+  const { user } = useAuth();
+  const roleLevel = user?.hierarchyLevel || 1;
+
+  const allNavItems = [
+    { name: 'Dashboard', path: '/', icon: LayoutDashboard, minLevel: 2 },
+    { name: 'Project Approvals', path: '/project-workflow', icon: Building2, badge: 'PIPELINE', minLevel: 1 },
+    { name: 'Email Dispatch Hub', path: '/email-hub', icon: Mail, badge: 'LOGS', minLevel: 1 },
+    { name: 'Market Intelligence', path: '/market-intelligence', icon: TrendingUp, minLevel: 3 },
+    { name: 'Cash Flow', path: '/cash-flow', icon: DollarSign, minLevel: 3 },
+    { name: 'Budgets', path: '/budgets', icon: Wallet, minLevel: 2 },
+    { name: 'Transactions', path: '/transactions', icon: ArrowRightLeft, badge: '1000+', minLevel: 2 },
+    { name: 'Payments', path: '/payments', icon: CreditCard, minLevel: 1 },
+    { name: 'Risk Analytics', path: '/risk-analytics', icon: ShieldAlert, alert: true, minLevel: 3 },
+    { name: 'Forecasting', path: '/forecasting', icon: BarChart3, minLevel: 3 },
+    { name: 'AI Financial Planner', path: '/ai-planner', icon: Cpu, minLevel: 3 },
+    { name: 'Reports', path: '/reports', icon: FileText, badge: '60+', minLevel: 2 },
+    { name: 'System Monitoring', path: '/system-monitoring', icon: Server, minLevel: 3 },
   ];
+
+  const navItems = allNavItems.filter((item) => roleLevel >= item.minLevel);
+
+  const subRoleText =
+    user?.role === 'CEO' ? 'GOVT EXECUTIVE' : user?.role === 'DIRECTOR' ? 'DIRECTORATE' : 'GOVT OPERATIONS';
 
   return (
     <aside
@@ -39,34 +41,28 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle }) => {
       }`}
     >
       {/* Brand Header */}
-      <div className="h-14 border-b border-[#232d42] flex items-center justify-between px-4">
-        {!collapsed && (
-          <div className="flex items-center space-x-2.5">
-            <div className="h-8 w-8 rounded-md bg-gradient-to-tr from-blue-600 to-cyan-500 flex items-center justify-center font-bold text-white shadow-lg shadow-blue-500/20">
-              <Activity className="h-5 w-5 text-white" />
-            </div>
-            <div>
-              <span className="font-bold text-sm tracking-wider text-white">FINOS</span>
-              <span className="block text-[10px] text-cyan-400 font-mono -mt-1">INTELLIGENCE</span>
-            </div>
-          </div>
-        )}
-        {collapsed && (
-          <div className="mx-auto h-8 w-8 rounded-md bg-gradient-to-tr from-blue-600 to-cyan-500 flex items-center justify-center font-bold text-white">
-            F
-          </div>
-        )}
+      <div className="h-16 border-b border-[#232d42] flex items-center justify-between px-3.5 font-mono">
+        <BrandLogo size="md" collapsed={collapsed} subtitleText={subRoleText} />
         <button
           onClick={onToggle}
-          className="text-slate-400 hover:text-white p-1 rounded hover:bg-[#182030] transition-colors"
+          className="text-slate-400 hover:text-white p-1 rounded hover:bg-[#182030] transition-colors ml-1 flex-shrink-0"
           title={collapsed ? "Expand Sidebar" : "Collapse Sidebar"}
         >
           {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
         </button>
       </div>
 
+      {/* Role Badge Indicator */}
+      {!collapsed && user && (
+        <div className="px-3 py-2 bg-[#080c14] border-b border-[#232d42] text-[10px] font-mono">
+          <div className="text-slate-400 font-bold uppercase">Role Permission Scope:</div>
+          <div className="text-cyan-400 font-bold truncate">{user.roleTitle}</div>
+          <div className="text-slate-500 text-[9px]">Hierarchy Level {user.hierarchyLevel} • {navItems.length} Modules Active</div>
+        </div>
+      )}
+
       {/* Nav List */}
-      <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-1">
+      <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-1 font-mono">
         {navItems.map((item) => {
           const Icon = item.icon;
           return (
@@ -96,12 +92,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle }) => {
         })}
       </nav>
 
-      {/* Footer System Status */}
+      {/* Footer Logout & System Status */}
       {!collapsed && (
         <div className="p-3 border-t border-[#232d42] bg-[#090c13]">
           <div className="flex items-center justify-between text-[11px] text-slate-400 font-mono">
             <span className="flex items-center">
-              <span className="status-dot-live mr-2" /> WS Connected
+              <span className="status-dot-live mr-2" /> Live RBAC Token
             </span>
             <span className="text-slate-500">v1.0.0</span>
           </div>

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { FinancialCard } from '../components/FinancialCard';
 import { ReactEChart } from '../components/ReactEChart';
 import { EChartsOption } from 'echarts';
-import { BarChart3, TrendingUp, Sliders, Layers, CheckCircle2 } from 'lucide-react';
+import { BarChart3, TrendingUp, Layers, CheckCircle2 } from 'lucide-react';
 
 export const Forecasting: React.FC = () => {
   const [horizon, setHorizon] = useState<number>(6);

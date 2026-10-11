@@ -2,11 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { FinancialCard } from '../components/FinancialCard';
 import { MarketChart } from '../components/MarketChart';
 import { mockTickService, LiveFinancialEvent } from '../services/mockTickService';
-import {
-  Wallet, DollarSign, PieChart, ShieldAlert, ArrowUpRight,
-  TrendingUp, AlertTriangle, Activity, Calendar, ArrowRight,
-  CheckCircle2, Clock, Layers, BarChart2
-} from 'lucide-react';
+import { Wallet, DollarSign, PieChart, ShieldAlert, TrendingUp, Activity, Calendar, ArrowRight, BarChart2 } from 'lucide-react';
 import { ReactEChart } from '../components/ReactEChart';
 import { EChartsOption } from 'echarts';
 import { useNavigate } from 'react-router-dom';
@@ -38,8 +34,26 @@ export const DashboardHome: React.FC = () => {
       axisLabel: { color: '#94a3b8', fontSize: 10, fontFamily: 'monospace' },
     },
     series: [
-      { name: 'Spent (₹L)', type: 'bar', stack: 'total', data: [235.5, 298.0, 142.0, 261.0, 125.0, 98.0], itemStyle: { color: '#3b82f6' } },
-      { name: 'Remaining Pool (₹L)', type: 'bar', stack: 'total', data: [14.5, 52.0, 58.0, 39.0, 55.0, 22.0], itemStyle: { color: '#1e293b' } },
+      {
+        name: 'Spent (₹L)',
+        type: 'bar',
+        stack: 'total',
+        data: [
+          { value: 235.5, itemStyle: { color: '#3b82f6' } }, // Public Works - Blue
+          { value: 298.0, itemStyle: { color: '#ef4444' } }, // Health - Red
+          { value: 142.0, itemStyle: { color: '#f59e0b' } }, // Education - Amber
+          { value: 261.0, itemStyle: { color: '#10b981' } }, // Transport - Emerald
+          { value: 125.0, itemStyle: { color: '#8b5cf6' } }, // Energy - Purple
+          { value: 98.0,  itemStyle: { color: '#06b6d4' } }, // IT - Cyan
+        ]
+      },
+      {
+        name: 'Remaining Pool (₹L)',
+        type: 'bar',
+        stack: 'total',
+        data: [14.5, 52.0, 58.0, 39.0, 55.0, 22.0],
+        itemStyle: { color: '#1e293b' }
+      },
     ],
   };
 
@@ -129,7 +143,7 @@ export const DashboardHome: React.FC = () => {
           icon={Wallet}
           change={4.8}
           changeLabel="from last month"
-          onClick={() => navigate('/financial-overview')}
+          onClick={() => navigate('/cash-flow')}
         />
         <FinancialCard
           title="Available Balance"
@@ -137,7 +151,7 @@ export const DashboardHome: React.FC = () => {
           icon={DollarSign}
           change={2.1}
           changeLabel="from last month"
-          onClick={() => navigate('/financial-overview')}
+          onClick={() => navigate('/cash-flow')}
         />
         <FinancialCard
           title="Total Expenditure"
@@ -165,9 +179,9 @@ export const DashboardHome: React.FC = () => {
         />
       </div>
 
-      {/* 3. CONTINUOUS GRAPHS GRID (Expenditure Bar Chart, Cash Flow Area Chart, Risk Pie Chart) */}
+      {/* 3. DEPARTMENT EXPENDITURE & CASH FLOW TREND GRID */}
       <div className="grid grid-cols-12 gap-4">
-        {/* Department Expenditure Stacked Bar (6 cols) */}
+        {/* Department Expenditure Stacked Bar (Left Column - 6 cols) */}
         <div className="col-span-12 lg:col-span-6 finos-card">
           <div className="flex justify-between items-center pb-2 border-b border-[#232d42] mb-3">
             <div className="flex items-center space-x-2">
@@ -179,7 +193,7 @@ export const DashboardHome: React.FC = () => {
           <ReactEChart option={deptChartOption} height="260px" />
         </div>
 
-        {/* Cash Flow Trend Area Chart (6 cols) */}
+        {/* Cash Flow Net Surplus Trend (Right Column - 6 cols) */}
         <div className="col-span-12 lg:col-span-6 finos-card">
           <div className="flex justify-between items-center pb-2 border-b border-[#232d42] mb-3">
             <div className="flex items-center space-x-2">
@@ -194,66 +208,52 @@ export const DashboardHome: React.FC = () => {
         </div>
       </div>
 
-      {/* 4. THIRD GRAPH ROW: Risk Exposure Distribution Pie Chart & Upcoming Obligations */}
-      <div className="grid grid-cols-12 gap-4">
-        {/* Risk Exposure Donut Chart (5 cols) */}
-        <div className="col-span-12 lg:col-span-5 finos-card">
-          <div className="flex justify-between items-center pb-2 border-b border-[#232d42] mb-3">
-            <div className="flex items-center space-x-2">
-              <ShieldAlert className="h-4 w-4 text-amber-400" />
-              <span className="font-bold text-slate-200 uppercase">System Risk Factor Distribution</span>
-            </div>
+      {/* 4. UPCOMING SCHEDULED OBLIGATIONS */}
+      <div className="finos-card">
+        <div className="flex justify-between items-center pb-2 border-b border-[#232d42] mb-3">
+          <div className="flex items-center space-x-2">
+            <Calendar className="h-4 w-4 text-amber-400" />
+            <span className="font-bold text-slate-200 uppercase">Upcoming Scheduled Obligations</span>
           </div>
-          <ReactEChart option={riskPieOption} height="220px" />
+          <button
+            onClick={() => navigate('/payments')}
+            className="text-[10px] text-blue-400 hover:underline flex items-center"
+          >
+            View Queue <ArrowRight className="h-3 w-3 ml-1" />
+          </button>
         </div>
 
-        {/* Upcoming Scheduled Obligations Table (7 cols) */}
-        <div className="col-span-12 lg:col-span-7 finos-card">
-          <div className="flex justify-between items-center pb-2 border-b border-[#232d42] mb-3">
-            <div className="flex items-center space-x-2">
-              <Calendar className="h-4 w-4 text-amber-400" />
-              <span className="font-bold text-slate-200 uppercase">Upcoming Scheduled Obligations</span>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div className="p-3 bg-[#151c2c] rounded border border-[#232d42] flex justify-between items-center">
+            <div>
+              <span className="font-bold text-white text-xs block">Apex Infrastructure Corp</span>
+              <span className="text-[10px] text-slate-400">Public Works • Bridge Maintenance</span>
             </div>
-            <button
-              onClick={() => navigate('/payments')}
-              className="text-[10px] text-blue-400 hover:underline flex items-center"
-            >
-              View Queue <ArrowRight className="h-3 w-3 ml-1" />
-            </button>
+            <div className="text-right">
+              <span className="font-bold text-white text-xs block">₹45.00 L</span>
+              <span className="text-[9px] text-amber-400 font-semibold">Due in 2 days</span>
+            </div>
           </div>
 
-          <div className="space-y-2 overflow-y-auto max-h-[220px] pr-1">
-            <div className="p-2.5 bg-[#151c2c] rounded border border-[#232d42] flex justify-between items-center">
-              <div>
-                <span className="font-bold text-white text-xs block">Apex Infrastructure Corp</span>
-                <span className="text-[10px] text-slate-400">Public Works • Bridge Maintenance</span>
-              </div>
-              <div className="text-right">
-                <span className="font-bold text-white text-xs block">₹45.00 L</span>
-                <span className="text-[9px] text-amber-400 font-semibold">Due in 2 days</span>
-              </div>
+          <div className="p-3 bg-[#151c2c] rounded border border-[#232d42] flex justify-between items-center">
+            <div>
+              <span className="font-bold text-white text-xs block">BioHealth MedTech Ltd</span>
+              <span className="text-[10px] text-slate-400">Health Dept • Medical Equipment</span>
             </div>
-
-            <div className="p-2.5 bg-[#151c2c] rounded border border-[#232d42] flex justify-between items-center">
-              <div>
-                <span className="font-bold text-white text-xs block">BioHealth MedTech Ltd</span>
-                <span className="text-[10px] text-slate-400">Health Dept • Medical Equipment</span>
-              </div>
-              <div className="text-right">
-                <span className="font-bold text-white text-xs block">₹1.25 Cr</span>
-                <span className="text-[9px] text-slate-400">Due in 5 days</span>
-              </div>
+            <div className="text-right">
+              <span className="font-bold text-white text-xs block">₹1.25 Cr</span>
+              <span className="text-[9px] text-slate-400">Due in 5 days</span>
             </div>
+          </div>
 
-            <div className="p-2.5 bg-[#151c2c] rounded border border-[#232d42] flex justify-between items-center">
-              <div>
-                <span className="font-bold text-white text-xs block">CloudScale Networks Inc</span>
-                <span className="text-[10px] text-slate-400">IT & Infrastructure • Cloud Hosting</span>
-              </div>
-              <div className="text-right">
-                <span className="font-bold text-white text-xs block">₹8.80 L</span>
-                <span className="text-[9px] text-slate-400">Due in 8 days</span>
-              </div>
+          <div className="p-3 bg-[#151c2c] rounded border border-[#232d42] flex justify-between items-center">
+            <div>
+              <span className="font-bold text-white text-xs block">CloudScale Networks Inc</span>
+              <span className="text-[10px] text-slate-400">IT & Infrastructure • Cloud Hosting</span>
+            </div>
+            <div className="text-right">
+              <span className="font-bold text-white text-xs block">₹8.80 L</span>
+              <span className="text-[9px] text-slate-400">Due in 8 days</span>
             </div>
           </div>
         </div>

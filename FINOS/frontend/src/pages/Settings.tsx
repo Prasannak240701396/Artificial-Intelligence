@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Settings as SettingsIcon, Save, Radio, Shield, Key, Sliders, CheckCircle2, DollarSign } from 'lucide-react';
+import { Settings as SettingsIcon, Save, Radio, Shield, Sliders, CheckCircle2, DollarSign } from 'lucide-react';
 import { mockTickService } from '../services/mockTickService';
 
 export const Settings: React.FC = () => {

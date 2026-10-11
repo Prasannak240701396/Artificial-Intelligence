@@ -1,89 +1,107 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useToast } from '../context/ToastContext';
 import { FinancialCard } from '../components/FinancialCard';
 import { ReactEChart } from '../components/ReactEChart';
 import { EChartsOption } from 'echarts';
-import { CreditCard, CheckCircle2, Clock, AlertTriangle, XCircle, Search, Filter, ShieldCheck, X, ArrowUpRight } from 'lucide-react';
-
-interface PaymentRecord {
-  id: string;
-  beneficiary: string;
-  department: string;
-  category: string;
-  amount: number;
-  priority: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
-  dueDate: string;
-  status: 'PENDING' | 'APPROVED' | 'COMPLETED' | 'REJECTED';
-  riskScore: number;
-  financialImpact: string;
-}
+import { CreditCard, CheckCircle2, Clock, XCircle, Search, X, Send, Mail } from 'lucide-react';
+import { generate75Payments, PaymentVoucher } from '../utils/dummyGenerator';
 
 export const Payments: React.FC = () => {
-  const [payments, setPayments] = useState<PaymentRecord[]>([
-    { id: 'PAY-9901', beneficiary: 'Apex Infrastructure Corp', department: 'Public Works', category: 'Bridge Repair', amount: 4500000, priority: 'HIGH', dueDate: '2026-09-24', status: 'PENDING', riskScore: 12, financialImpact: 'Low reserve impact (3.6% of available balance)' },
-    { id: 'PAY-9902', beneficiary: 'BioHealth MedTech Ltd', department: 'Health', category: 'Medical Equipment', amount: 12500000, priority: 'CRITICAL', dueDate: '2026-09-26', status: 'PENDING', riskScore: 28, financialImpact: 'Moderate impact (10% of health budget pool)' },
-    { id: 'PAY-9903', beneficiary: 'CloudScale Networks Inc', department: 'IT & Telecom', category: 'Cloud Hosting', amount: 880000, priority: 'MEDIUM', dueDate: '2026-09-29', status: 'APPROVED', riskScore: 8, financialImpact: 'Negligible impact (routine operational expenditure)' },
-    { id: 'PAY-9904', beneficiary: 'SunRay Solar Holdings', department: 'Energy', category: 'Solar Grid Installation', amount: 9200000, priority: 'HIGH', dueDate: '2026-10-02', status: 'PENDING', riskScore: 85, financialImpact: 'High risk exposure — Flagged by Anomaly Engine' },
-    { id: 'PAY-9905', beneficiary: 'Urban Transport Logistics', department: 'Transport', category: 'Fleet Maintenance', amount: 3100000, priority: 'LOW', dueDate: '2026-10-05', status: 'COMPLETED', riskScore: 14, financialImpact: 'Disbursed and reconciled in audit ledger' },
-    { id: 'PAY-9906', beneficiary: 'EcoWater Solutions', department: 'Public Works', category: 'Water Filtration', amount: 6400000, priority: 'HIGH', dueDate: '2026-10-08', status: 'REJECTED', riskScore: 92, financialImpact: 'Duplicate invoice detected by Policy Agent' },
-  ]);
+  const navigate = useNavigate();
+  const { addToast } = useToast();
 
+  const [payments, setPayments] = useState<PaymentVoucher[]>(() => generate75Payments());
   const [filterStatus, setFilterStatus] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState<string>('');
-  const [selectedPayment, setSelectedPayment] = useState<PaymentRecord | null>(null);
-  const [cardModalInfo, setCardModalInfo] = useState<{ title: string; count: number; items: PaymentRecord[] } | null>(null);
+  const [selectedPayment, setSelectedPayment] = useState<PaymentVoucher | null>(null);
+  const [cardModalInfo, setCardModalInfo] = useState<{ title: string; count: number; items: PaymentVoucher[] } | null>(null);
+  const [emailNotice, setEmailNotice] = useState<{
+    voucherCode: string;
+    vendorName: string;
+    recipientEmail: string;
+    recipientPosition: string;
+    statusAction: string;
+    amount: number;
+  } | null>(null);
 
   const filteredPayments = payments.filter((p) => {
     const matchStatus = filterStatus === 'ALL' || p.status === filterStatus;
     const matchSearch =
-      p.beneficiary.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      p.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      p.department.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      p.category.toLowerCase().includes(searchQuery.toLowerCase());
+      p.vendorName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      p.voucherCode.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      p.projectCode.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      p.department.toLowerCase().includes(searchQuery.toLowerCase());
     return matchStatus && matchSearch;
   });
 
   const totalValue = payments.reduce((acc, curr) => acc + curr.amount, 0);
-  const pendingCount = payments.filter((p) => p.status === 'PENDING').length;
+  const pendingCount = payments.filter((p) => p.status === 'PENDING_APPROVAL').length;
   const approvedCount = payments.filter((p) => p.status === 'APPROVED').length;
-  const completedCount = payments.filter((p) => p.status === 'COMPLETED').length;
+  const rejectedCount = payments.filter((p) => p.status === 'REJECTED').length;
 
-  const updateStatus = (id: string, newStatus: PaymentRecord['status']) => {
+  // Handle Approve / Reject -> Redirects directly to Project Approval tab (/project-workflow)
+  const handlePaymentAction = (payment: PaymentVoucher, newStatus: 'APPROVED' | 'REJECTED') => {
+    // 1. Update Payment Status in state
     setPayments((prev) =>
-      prev.map((p) => (p.id === id ? { ...p, status: newStatus } : p))
+      prev.map((p) => (p.id === payment.id ? { ...p, status: newStatus } : p))
     );
-    if (selectedPayment && selectedPayment.id === id) {
-      setSelectedPayment({ ...selectedPayment, status: newStatus });
-    }
+
+    // 2. Dispatch Toast & Save status notice to localStorage for Project Approval tab
+    const actionLabel = newStatus === 'APPROVED' ? 'Project Approved' : 'Project Denied';
+    addToast(
+      actionLabel,
+      `Payment Voucher ${payment.voucherCode} (${payment.projectCode}) ${newStatus === 'APPROVED' ? 'Approved & Dispatched!' : 'Rejected & Denied!'} Redirecting to Project Approval tab...`,
+      newStatus === 'APPROVED' ? 'success' : 'error'
+    );
+
+    localStorage.setItem(
+      'finos_last_payment_action',
+      JSON.stringify({
+        projectCode: payment.projectCode,
+        voucherCode: payment.voucherCode,
+        vendorName: payment.vendorName,
+        department: payment.department,
+        amount: payment.amount,
+        status: newStatus,
+        timestamp: new Date().toISOString()
+      })
+    );
+
+    // 3. Immediately navigate to Project Approval Tab (/project-workflow)
+    setTimeout(() => {
+      navigate('/project-workflow');
+    }, 400);
   };
 
-  // Card click handlers for all 4 top cards
-  const handleCardClick = (cardType: 'TOTAL' | 'PENDING' | 'APPROVED' | 'COMPLETED') => {
+  // Card click handlers
+  const handleCardClick = (cardType: 'TOTAL' | 'PENDING' | 'APPROVED' | 'REJECTED') => {
     if (cardType === 'TOTAL') {
       setCardModalInfo({
-        title: 'All Payment Queue Items (Total Queue Value)',
+        title: 'All Payment Vouchers (Total Queue)',
         count: payments.length,
         items: payments,
       });
     } else if (cardType === 'PENDING') {
-      setFilterStatus('PENDING');
+      setFilterStatus('PENDING_APPROVAL');
       setCardModalInfo({
-        title: 'Pending Payments Awaiting Approval',
+        title: 'Pending Payments Awaiting Officer Authorization',
         count: pendingCount,
-        items: payments.filter((p) => p.status === 'PENDING'),
+        items: payments.filter((p) => p.status === 'PENDING_APPROVAL'),
       });
     } else if (cardType === 'APPROVED') {
       setFilterStatus('APPROVED');
       setCardModalInfo({
-        title: 'Approved Payments Ready for Disbursement',
+        title: 'Approved Payments Dispatched to Bank',
         count: approvedCount,
         items: payments.filter((p) => p.status === 'APPROVED'),
       });
-    } else if (cardType === 'COMPLETED') {
-      setFilterStatus('COMPLETED');
+    } else if (cardType === 'REJECTED') {
+      setFilterStatus('REJECTED');
       setCardModalInfo({
-        title: 'Completed & Reconciled Payouts',
-        count: completedCount,
-        items: payments.filter((p) => p.status === 'COMPLETED'),
+        title: 'Rejected Payment Vouchers',
+        count: rejectedCount,
+        items: payments.filter((p) => p.status === 'REJECTED'),
       });
     }
   };
@@ -99,19 +117,18 @@ export const Payments: React.FC = () => {
         itemStyle: { borderRadius: 4, borderColor: '#111622', borderWidth: 2 },
         label: { show: false },
         data: [
-          { value: pendingCount, name: 'Pending', itemStyle: { color: '#f59e0b' } },
+          { value: pendingCount, name: 'Pending Approval', itemStyle: { color: '#f59e0b' } },
           { value: approvedCount, name: 'Approved', itemStyle: { color: '#3b82f6' } },
-          { value: completedCount, name: 'Completed', itemStyle: { color: '#10b981' } },
-          { value: payments.filter((p) => p.status === 'REJECTED').length, name: 'Rejected', itemStyle: { color: '#ef4444' } },
+          { value: rejectedCount, name: 'Rejected', itemStyle: { color: '#ef4444' } },
         ],
       },
     ],
   };
 
-  // Payment Trend Bar Chart
+  // Weekly Disbursement Trend Chart
   const trendChartOption: EChartsOption = {
     tooltip: { trigger: 'axis' },
-    grid: { top: 20, right: 15, bottom: 20, left: 45 },
+    grid: { top: 20, right: 15, bottom: 25, left: 45 },
     xAxis: {
       type: 'category',
       data: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
@@ -124,10 +141,10 @@ export const Payments: React.FC = () => {
     },
     series: [
       {
-        name: 'Disbursement Volume (₹L)',
+        name: 'Disbursed (₹Cr)',
         type: 'bar',
-        data: [45.0, 125.0, 31.0, 64.0],
-        itemStyle: { color: '#3b82f6' },
+        data: [14.2, 18.5, 22.8, 28.4],
+        itemStyle: { color: '#10b981' },
       },
     ],
   };
@@ -138,93 +155,90 @@ export const Payments: React.FC = () => {
       <div className="flex flex-wrap justify-between items-center gap-3 pb-3 border-b border-[#232d42]">
         <div>
           <h1 className="text-lg font-bold uppercase text-white tracking-wider flex items-center gap-2">
-            <CreditCard className="h-5 w-5 text-blue-400" /> Payment & Vendor Disbursement Management
+            <CreditCard className="h-5 w-5 text-blue-400" /> Vendor Payment Authorization & Email Dispatch Terminal
           </h1>
           <p className="text-xs text-slate-400 mt-0.5">
-            Policy-screened vendor disbursement queue, risk approval pipeline & execution sandbox
+            75+ Payment Vouchers • Instant Email Notification Dispatched to Field Officer upon Approval/Rejection
           </p>
         </div>
       </div>
 
-      {/* 4 TOP SUMMARY CARDS — ALL CLICKABLE */}
+      {/* Email Dispatch Notice Toast */}
+      {emailNotice && (
+        <div className="bg-[#151c2c] border border-blue-500/40 rounded-lg p-4 shadow-2xl space-y-2 font-mono text-xs animate-in fade-in slide-in-from-top-4">
+          <div className="flex items-center justify-between border-b border-[#232d42] pb-2">
+            <div className="flex items-center space-x-2 text-cyan-400 font-bold uppercase">
+              <Mail className="w-4 h-4 text-emerald-400" />
+              <span>Official Dispatch Sent to Respective Field Officer!</span>
+            </div>
+            <button onClick={() => setEmailNotice(null)} className="text-slate-400 hover:text-white">
+              ✕
+            </button>
+          </div>
+          <div className="text-slate-300 text-[11px] leading-relaxed space-y-1">
+            <div><strong>Recipient Field Officer:</strong> <span className="text-white">{emailNotice.recipientPosition}</span> ({emailNotice.recipientEmail})</div>
+            <div><strong>Voucher Code:</strong> <span className="text-cyan-400 font-bold">{emailNotice.voucherCode}</span> | Vendor: {emailNotice.vendorName}</div>
+            <div><strong>Action Decision:</strong> <span className={`font-extrabold ${emailNotice.statusAction === 'APPROVED' ? 'text-emerald-400' : 'text-red-400'}`}>{emailNotice.statusAction}</span> (₹{emailNotice.amount.toFixed(2)} Cr)</div>
+            <div className="text-[10px] text-slate-500 pt-1">
+              ✓ Email Notification Logged into Enterprise Terminal & Email Dispatch Hub.
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Top Cards Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <FinancialCard
-          title="Total Payment Queue Value"
-          value={`₹${(totalValue / 10000000).toFixed(2)} Cr`}
-          icon={CreditCard}
-          change={2.8}
-          changeLabel="Total Queue"
-          subtitle="Click to view all payout details →"
-          onClick={() => handleCardClick('TOTAL')}
-        />
-        <FinancialCard
-          title="Pending Payments"
-          value={`${pendingCount} Payouts`}
-          icon={Clock}
-          change={-5.0}
-          changeLabel="Awaiting Approval"
-          subtitle="Click to view pending payouts →"
-          onClick={() => handleCardClick('PENDING')}
-        />
-        <FinancialCard
-          title="Approved Payments"
-          value={`${approvedCount} Payouts`}
-          icon={CheckCircle2}
-          change={12.0}
-          changeLabel="Ready for Disbursement"
-          subtitle="Click to view approved payouts →"
-          onClick={() => handleCardClick('APPROVED')}
-        />
-        <FinancialCard
-          title="Completed Payouts"
-          value={`${completedCount} Payouts`}
-          icon={ShieldCheck}
-          change={4.2}
-          changeLabel="Reconciled"
-          subtitle="Click to view completed payouts →"
-          onClick={() => handleCardClick('COMPLETED')}
-        />
+        <div onClick={() => handleCardClick('TOTAL')} className="cursor-pointer transition-transform hover:scale-[1.02]">
+          <FinancialCard title="Total Queue Value" value={`₹${totalValue.toFixed(2)} Cr`} icon={CreditCard} change={12.4} changeLabel="80 Vouchers" />
+        </div>
+        <div onClick={() => handleCardClick('PENDING')} className="cursor-pointer transition-transform hover:scale-[1.02]">
+          <FinancialCard title="Pending Field Approval" value={`${pendingCount} Vouchers`} icon={Clock} change={-5.2} changeLabel="Awaiting Action" />
+        </div>
+        <div onClick={() => handleCardClick('APPROVED')} className="cursor-pointer transition-transform hover:scale-[1.02]">
+          <FinancialCard title="Approved Dispatches" value={`${approvedCount} Vouchers`} icon={CheckCircle2} change={18.5} changeLabel="Dispatched" />
+        </div>
+        <div onClick={() => handleCardClick('REJECTED')} className="cursor-pointer transition-transform hover:scale-[1.02]">
+          <FinancialCard title="Rejected Vouchers" value={`${rejectedCount} Vouchers`} icon={XCircle} change={2.1} changeLabel="Flagged / Denied" />
+        </div>
       </div>
 
-      {/* Charts Row */}
+      {/* Charts Grid */}
       <div className="grid grid-cols-12 gap-4">
-        <div className="col-span-12 lg:col-span-6 finos-card">
+        <div className="col-span-12 lg:col-span-4 finos-card bg-[#151c2c] border border-[#232d42] p-4 rounded-md">
           <div className="flex justify-between items-center mb-2 pb-2 border-b border-[#232d42]">
-            <span className="font-bold text-slate-200 uppercase">Payment Status Distribution</span>
-            <span className="text-[10px] text-slate-400">{payments.length} Total Records</span>
+            <span className="font-bold text-slate-200 uppercase">Payment Queue Status</span>
           </div>
           <ReactEChart option={statusChartOption} height="200px" />
         </div>
 
-        <div className="col-span-12 lg:col-span-6 finos-card">
+        <div className="col-span-12 lg:col-span-8 finos-card bg-[#151c2c] border border-[#232d42] p-4 rounded-md">
           <div className="flex justify-between items-center mb-2 pb-2 border-b border-[#232d42]">
-            <span className="font-bold text-slate-200 uppercase">Weekly Disbursement Volume Trend (₹ Lakhs)</span>
-            <span className="text-[10px] text-cyan-400">September 2026</span>
+            <span className="font-bold text-slate-200 uppercase">Weekly Disbursement Volume Trend (₹ Cr)</span>
           </div>
           <ReactEChart option={trendChartOption} height="200px" />
         </div>
       </div>
 
       {/* Table Toolbar: Search & Filters */}
-      <div className="finos-card bg-[#111622] p-3 rounded-md flex flex-wrap items-center justify-between gap-3 border border-[#232d42]">
-        <div className="flex items-center space-x-2 flex-1 min-w-[240px]">
-          <Search className="h-4 w-4 text-slate-500" />
+      <div className="finos-card bg-[#111622] p-3.5 rounded-md flex flex-wrap items-center justify-between gap-3 border border-[#232d42]">
+        <div className="flex items-center space-x-2 flex-1 min-w-[240px] relative">
+          <Search className="h-4 w-4 text-slate-500 absolute left-3 top-2.5" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Filter by Payment ID, Beneficiary, Department, Category..."
-            className="w-full bg-[#151c2c] border border-[#232d42] text-xs text-slate-200 placeholder-slate-500 rounded px-3 py-1.5 focus:outline-none focus:border-blue-500 font-mono"
+            placeholder="Search 75+ Vouchers by Code, Vendor, Department, Project..."
+            className="w-full bg-[#151c2c] border border-[#232d42] text-xs text-slate-200 placeholder-slate-500 rounded pl-9 pr-3 py-2 focus:outline-none focus:border-blue-500 font-mono"
           />
         </div>
 
-        {/* Filter Buttons */}
+        {/* Status Tabs */}
         <div className="flex space-x-1 bg-[#151c2c] p-1 rounded border border-[#232d42]">
-          {(['ALL', 'PENDING', 'APPROVED', 'COMPLETED', 'REJECTED'] as const).map((st) => (
+          {(['ALL', 'PENDING_APPROVAL', 'APPROVED', 'REJECTED'] as const).map((st) => (
             <button
               key={st}
               onClick={() => setFilterStatus(st)}
-              className={`px-2.5 py-1 rounded text-[11px] font-bold transition-colors ${
+              className={`px-3 py-1 rounded text-[11px] font-bold transition-colors ${
                 filterStatus === st
                   ? 'bg-blue-600 text-white shadow'
                   : 'text-slate-400 hover:text-white hover:bg-[#1e293b]'
@@ -236,85 +250,66 @@ export const Payments: React.FC = () => {
         </div>
       </div>
 
+      {/* Counter Label */}
+      <div className="text-[11px] text-slate-400 flex items-center justify-between font-mono">
+        <span>Showing <strong className="text-white">{filteredPayments.length}</strong> of <strong className="text-white">{payments.length}</strong> Payment Vouchers</span>
+        <span className="text-cyan-400">Clicking Approve/Reject emails respective Field Officer instantly</span>
+      </div>
+
       {/* Payments Table */}
-      <div className="finos-card overflow-x-auto">
-        <table className="finos-table">
+      <div className="finos-card bg-[#111622] border border-[#232d42] rounded-md overflow-x-auto max-h-[700px] overflow-y-auto">
+        <table className="finos-table w-full text-left font-mono">
           <thead>
-            <tr>
-              <th>Payment ID</th>
-              <th>Beneficiary</th>
-              <th>Department</th>
-              <th>Category</th>
-              <th>Amount (₹)</th>
-              <th>Priority</th>
-              <th>Due Date</th>
-              <th>Risk Score</th>
-              <th>Status</th>
-              <th>Action</th>
+            <tr className="bg-[#151c2c] border-b border-[#232d42] text-slate-400">
+              <th className="p-3">Voucher Code</th>
+              <th className="p-3">Project Code</th>
+              <th className="p-3">Vendor / Beneficiary</th>
+              <th className="p-3">Department</th>
+              <th className="p-3">Amount (₹ Cr)</th>
+              <th className="p-3">Field Officer Position</th>
+              <th className="p-3">Due Date</th>
+              <th className="p-3">Status</th>
+              <th className="p-3 text-right">Officer Email Actions</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody className="divide-y divide-[#1c2638]">
             {filteredPayments.map((p) => (
-              <tr
-                key={p.id}
-                onClick={() => setSelectedPayment(p)}
-                className="cursor-pointer hover:bg-[#182338] transition-colors"
-              >
-                <td className="font-bold text-blue-400">{p.id}</td>
-                <td className="font-semibold text-white">{p.beneficiary}</td>
-                <td className="text-slate-300">{p.department}</td>
-                <td className="text-slate-400">{p.category}</td>
-                <td className="font-bold text-white">₹{p.amount.toLocaleString()}</td>
-                <td>
-                  <span
-                    className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                      p.priority === 'CRITICAL'
-                        ? 'bg-red-500/20 text-red-400 border border-red-500/40'
-                        : p.priority === 'HIGH'
-                        ? 'bg-amber-500/20 text-amber-400 border border-amber-500/40'
-                        : 'bg-blue-500/20 text-blue-400 border border-blue-500/40'
-                    }`}
-                  >
-                    {p.priority}
-                  </span>
-                </td>
-                <td className="text-slate-400">{p.dueDate}</td>
-                <td>
-                  <span
-                    className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
-                      p.riskScore >= 70
-                        ? 'bg-red-500/20 text-red-400 border border-red-500/40'
-                        : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40'
-                    }`}
-                  >
-                    {p.riskScore}
-                  </span>
-                </td>
-                <td>
-                  <span
-                    className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                      p.status === 'COMPLETED'
-                        ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                        : p.status === 'APPROVED'
-                        ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
-                        : p.status === 'REJECTED'
-                        ? 'bg-red-500/20 text-red-400 border border-red-500/30'
-                        : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
-                    }`}
-                  >
+              <tr key={p.id} onClick={() => setSelectedPayment(p)} className="cursor-pointer hover:bg-[#182338] transition-colors">
+                <td className="p-3 font-bold text-blue-400">{p.voucherCode}</td>
+                <td className="p-3 text-cyan-400 font-bold">{p.projectCode}</td>
+                <td className="p-3 font-semibold text-white">{p.vendorName}</td>
+                <td className="p-3 text-slate-300">{p.department}</td>
+                <td className="p-3 font-extrabold text-emerald-400">₹{p.amount.toFixed(2)} Cr</td>
+                <td className="p-3 text-slate-300">{p.recipientFieldOfficer}</td>
+                <td className="p-3 text-slate-400">{p.dueDate}</td>
+                <td className="p-3">
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${
+                    p.status === 'APPROVED'
+                      ? 'bg-blue-500/20 text-blue-400 border-blue-500/30'
+                      : p.status === 'REJECTED'
+                      ? 'bg-red-500/20 text-red-400 border-red-500/30'
+                      : 'bg-amber-500/20 text-amber-400 border-amber-500/30'
+                  }`}>
                     {p.status}
                   </span>
                 </td>
-                <td>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setSelectedPayment(p);
-                    }}
-                    className="text-blue-400 hover:text-white underline text-[11px]"
-                  >
-                    Inspect
-                  </button>
+                <td className="p-3 text-right">
+                  <div className="flex items-center justify-end space-x-1.5" onClick={(e) => e.stopPropagation()}>
+                    <button
+                      onClick={() => handlePaymentAction(p, 'APPROVED')}
+                      className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[10px] px-2.5 py-1 rounded shadow flex items-center space-x-1"
+                    >
+                      <Send className="w-3 h-3" />
+                      <span>Approve & Email</span>
+                    </button>
+                    <button
+                      onClick={() => handlePaymentAction(p, 'REJECTED')}
+                      className="bg-red-600/80 hover:bg-red-600 text-white font-bold text-[10px] px-2.5 py-1 rounded flex items-center space-x-1"
+                    >
+                      <XCircle className="w-3 h-3" />
+                      <span>Reject & Email</span>
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}
@@ -322,21 +317,21 @@ export const Payments: React.FC = () => {
         </table>
       </div>
 
-      {/* TOP CARDS DETAILS MODAL */}
+      {/* CARDS MODAL DETAILS */}
       {cardModalInfo && (
-        <div className="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4 font-mono text-xs">
-          <div className="w-full max-w-2xl bg-[#0d121d] border border-[#232d42] rounded-lg p-5 shadow-2xl space-y-4">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4 font-mono text-xs">
+          <div className="w-full max-w-2xl bg-[#151c2c] border border-[#232d42] rounded-lg p-6 shadow-2xl space-y-4">
             <div className="flex justify-between items-start pb-3 border-b border-[#232d42]">
               <div>
                 <h3 className="font-bold text-sm text-white">{cardModalInfo.title}</h3>
-                <span className="text-xs text-cyan-400 font-bold">{cardModalInfo.count} Records Found</span>
+                <span className="text-xs text-cyan-400 font-bold">{cardModalInfo.count} Vouchers</span>
               </div>
               <button onClick={() => setCardModalInfo(null)} className="p-1 text-slate-400 hover:text-white">
                 <X className="h-5 w-5" />
               </button>
             </div>
 
-            <div className="space-y-2 max-h-[360px] overflow-y-auto">
+            <div className="space-y-2 max-h-[380px] overflow-y-auto">
               {cardModalInfo.items.map((p) => (
                 <div
                   key={p.id}
@@ -344,15 +339,15 @@ export const Payments: React.FC = () => {
                     setCardModalInfo(null);
                     setSelectedPayment(p);
                   }}
-                  className="p-3 bg-[#151c2c] rounded border border-[#232d42] flex justify-between items-center cursor-pointer hover:border-blue-500/50"
+                  className="p-3 bg-[#0d121d] rounded border border-[#232d42] flex justify-between items-center cursor-pointer hover:border-blue-500/50"
                 >
                   <div>
-                    <span className="font-bold text-blue-400 mr-2">{p.id}</span>
-                    <span className="font-bold text-white text-xs">{p.beneficiary}</span>
-                    <span className="block text-[10px] text-slate-400">{p.department} • {p.category}</span>
+                    <span className="font-bold text-blue-400 mr-2">{p.voucherCode}</span>
+                    <span className="font-bold text-white text-xs">{p.vendorName}</span>
+                    <span className="block text-[10px] text-slate-400">{p.department} • Officer: {p.recipientFieldOfficer}</span>
                   </div>
                   <div className="text-right">
-                    <span className="font-bold text-emerald-400 block">₹{p.amount.toLocaleString()}</span>
+                    <span className="font-bold text-emerald-400 block">₹{p.amount.toFixed(2)} Cr</span>
                     <span className="text-[10px] text-amber-400 font-bold">{p.status}</span>
                   </div>
                 </div>
@@ -364,22 +359,22 @@ export const Payments: React.FC = () => {
                 onClick={() => setCardModalInfo(null)}
                 className="bg-blue-600 hover:bg-blue-500 text-white font-bold px-4 py-1.5 rounded text-xs"
               >
-                Close Details
+                Close Queue
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* INDIVIDUAL PAYMENT DETAIL DRAWER */}
+      {/* INDIVIDUAL PAYMENT DETAIL & EMAIL DISPATCH DRAWER */}
       {selectedPayment && (
-        <div className="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-end p-4 font-mono">
-          <div className="w-full max-w-md h-full bg-[#0d121d] border-l border-[#232d42] shadow-2xl p-6 flex flex-col justify-between space-y-4 overflow-y-auto">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-end p-4 font-mono text-xs">
+          <div className="w-full max-w-md h-full bg-[#151c2c] border-l border-[#232d42] shadow-2xl p-6 flex flex-col justify-between space-y-4 overflow-y-auto">
             <div className="space-y-4">
               <div className="flex justify-between items-start pb-3 border-b border-[#232d42]">
                 <div>
-                  <span className="text-xs text-blue-400 font-bold block">{selectedPayment.id}</span>
-                  <h3 className="text-base font-bold text-white mt-0.5">{selectedPayment.beneficiary}</h3>
+                  <span className="text-xs text-blue-400 font-bold block">{selectedPayment.voucherCode} • {selectedPayment.projectCode}</span>
+                  <h3 className="text-base font-bold text-white mt-0.5">{selectedPayment.vendorName}</h3>
                 </div>
                 <button onClick={() => setSelectedPayment(null)} className="p-1 text-slate-400 hover:text-white">
                   <X className="h-5 w-5" />
@@ -387,55 +382,47 @@ export const Payments: React.FC = () => {
               </div>
 
               <div className="space-y-3 text-xs">
-                <div className="bg-[#151c2c] p-3 rounded border border-[#232d42]">
-                  <span className="text-slate-400 text-[10px] block">Payment Amount</span>
-                  <span className="text-xl font-bold text-white">₹{selectedPayment.amount.toLocaleString()}</span>
+                <div className="bg-[#0d121d] p-3 rounded border border-[#232d42]">
+                  <span className="text-slate-400 text-[10px] block">Disbursement Capital</span>
+                  <span className="text-xl font-bold text-emerald-400">₹{selectedPayment.amount.toFixed(2)} Cr</span>
                 </div>
 
                 <div className="grid grid-cols-2 gap-2">
-                  <div className="bg-[#151c2c] p-2.5 rounded border border-[#232d42]">
+                  <div className="bg-[#0d121d] p-2.5 rounded border border-[#232d42]">
                     <span className="text-slate-500 text-[10px] block">Department</span>
                     <span className="font-semibold text-slate-200">{selectedPayment.department}</span>
                   </div>
-                  <div className="bg-[#151c2c] p-2.5 rounded border border-[#232d42]">
-                    <span className="text-slate-500 text-[10px] block">Category</span>
-                    <span className="font-semibold text-slate-200">{selectedPayment.category}</span>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="bg-[#151c2c] p-2.5 rounded border border-[#232d42]">
-                    <span className="text-slate-500 text-[10px] block">Priority</span>
-                    <span className="font-bold text-amber-400">{selectedPayment.priority}</span>
-                  </div>
-                  <div className="bg-[#151c2c] p-2.5 rounded border border-[#232d42]">
+                  <div className="bg-[#0d121d] p-2.5 rounded border border-[#232d42]">
                     <span className="text-slate-500 text-[10px] block">Due Date</span>
                     <span className="font-semibold text-slate-200">{selectedPayment.dueDate}</span>
                   </div>
                 </div>
 
-                <div className="p-3 bg-[#151c2c] rounded border border-[#232d42] space-y-1">
-                  <span className="text-slate-400 text-[10px] block">Financial Impact Assessment</span>
-                  <p className="text-slate-200 text-[11px] leading-snug">{selectedPayment.financialImpact}</p>
+                <div className="p-3 bg-[#0d121d] rounded border border-[#232d42] space-y-1">
+                  <span className="text-slate-400 text-[10px] block">Recipient Officer Email Target</span>
+                  <div className="font-bold text-white text-xs">{selectedPayment.recipientFieldOfficer}</div>
+                  <div className="text-cyan-400 text-[11px]">{selectedPayment.officerEmail}</div>
                 </div>
               </div>
             </div>
 
-            {/* Simulated Actions */}
+            {/* Email Dispatch Buttons */}
             <div className="pt-4 border-t border-[#232d42] space-y-2">
-              <span className="text-[10px] text-slate-500 uppercase block">Simulate Payout Action</span>
+              <span className="text-[10px] text-slate-400 uppercase block font-bold">Approve / Reject & Dispatch Email:</span>
               <div className="grid grid-cols-2 gap-2">
                 <button
-                  onClick={() => updateStatus(selectedPayment.id, 'APPROVED')}
-                  className="bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 rounded transition-colors text-xs"
+                  onClick={() => handlePaymentAction(selectedPayment, 'APPROVED')}
+                  className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 rounded text-xs flex items-center justify-center space-x-1.5 shadow-lg"
                 >
-                  Approve Payout
+                  <Send className="w-3.5 h-3.5" />
+                  <span>Approve & Email</span>
                 </button>
                 <button
-                  onClick={() => updateStatus(selectedPayment.id, 'REJECTED')}
-                  className="bg-red-600/80 hover:bg-red-600 text-white font-bold py-2 rounded transition-colors text-xs"
+                  onClick={() => handlePaymentAction(selectedPayment, 'REJECTED')}
+                  className="bg-red-600/80 hover:bg-red-600 text-white font-bold py-2.5 rounded text-xs flex items-center justify-center space-x-1.5"
                 >
-                  Reject Payout
+                  <XCircle className="w-3.5 h-3.5" />
+                  <span>Reject & Email</span>
                 </button>
               </div>
             </div>

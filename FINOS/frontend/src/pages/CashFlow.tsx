@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { FinancialCard } from '../components/FinancialCard';
 import { ReactEChart } from '../components/ReactEChart';
 import { EChartsOption } from 'echarts';
-import { DollarSign, ArrowUpRight, ArrowDownRight, Layers, AlertCircle, CheckCircle2, ShieldAlert, Calendar, X } from 'lucide-react';
+import { DollarSign, ArrowUpRight, ArrowDownRight, Layers, CheckCircle2 } from 'lucide-react';
 
 export const CashFlow: React.FC = () => {
   const [timeFilter, setTimeFilter] = useState<'7D' | '30D' | '3M' | '6M' | '1Y'>('6M');

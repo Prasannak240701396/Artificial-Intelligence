@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../services/api';
 import { AuditLog } from '../types';
-import { History, Search, Filter, ShieldCheck } from 'lucide-react';
+import { History } from 'lucide-react';
 
 export const AuditTrail: React.FC = () => {
   const [logs, setLogs] = useState<AuditLog[]>([]);

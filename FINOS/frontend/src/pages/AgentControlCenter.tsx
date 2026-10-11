@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Bot, Play, Activity, CheckCircle2, ShieldCheck, Clock, X, Terminal, Cpu } from 'lucide-react';
+import { Bot, Play, X } from 'lucide-react';
 import { AgentExecutionModal } from '../components/AgentExecutionModal';
 
 interface AgentInfo {

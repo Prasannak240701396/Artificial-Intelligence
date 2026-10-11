@@ -2,18 +2,30 @@ import React, { useState, useEffect } from 'react';
 import { FinancialCard } from '../components/FinancialCard';
 import { ReactEChart } from '../components/ReactEChart';
 import { EChartsOption } from 'echarts';
-import { TrendingUp, RefreshCw, Layers, DollarSign, Activity, PieChart, BarChart2 } from 'lucide-react';
+import { TrendingUp, Activity, BarChart2, Search } from 'lucide-react';
 import { mockTickService } from '../services/mockTickService';
+import { generate75MarketAssets, MarketAssetItem } from '../utils/dummyGenerator';
 
 export const MarketIntelligence: React.FC = () => {
   const [ticks, setTicks] = useState<any>({});
+  const [assets] = useState<MarketAssetItem[]>(() => generate75MarketAssets());
+  const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
+  const [searchQuery, setSearchQuery] = useState<string>('');
 
   useEffect(() => {
     const unsub = mockTickService.subscribeTicks((data) => setTicks(data));
     return () => unsub();
   }, []);
 
-  // Correlation Matrix Heatmap Option (Preserved)
+  const filteredAssets = assets.filter((a) => {
+    const matchCategory = selectedCategory === 'ALL' || a.category === selectedCategory;
+    const matchSearch =
+      a.symbol.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      a.name.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchCategory && matchSearch;
+  });
+
+  // Correlation Matrix Heatmap Option
   const correlationOption: EChartsOption = {
     tooltip: { position: 'top' },
     grid: { top: 25, right: 20, bottom: 40, left: 70 },
@@ -65,11 +77,11 @@ export const MarketIntelligence: React.FC = () => {
             <TrendingUp className="h-5 w-5 text-cyan-400" /> Global Market Intelligence Terminal
           </h1>
           <p className="text-xs text-slate-400 mt-0.5">
-            Macroeconomic correlations, orderbook depth simulation & multi-asset surveillance
+            80+ Surveillance Assets • Macroeconomic correlations, orderbook depth simulation & multi-asset surveillance
           </p>
         </div>
         <span className="text-xs bg-cyan-500/10 text-cyan-400 px-3 py-1 rounded border border-cyan-500/30 font-bold flex items-center">
-          <span className="status-dot-live mr-1.5" /> LIVE TICKS STREAM
+          <span className="status-dot-live mr-1.5" /> LIVE TICKS STREAM ({assets.length} ASSETS)
         </span>
       </div>
 
@@ -107,66 +119,93 @@ export const MarketIntelligence: React.FC = () => {
 
       {/* Charts Grid: Heatmap & Volatility */}
       <div className="grid grid-cols-12 gap-4">
-        <div className="col-span-12 lg:col-span-6 finos-card">
+        <div className="col-span-12 lg:col-span-6 finos-card bg-[#151c2c] p-4 rounded border border-[#232d42]">
           <div className="flex justify-between items-center mb-3 pb-2 border-b border-[#232d42]">
             <span className="font-bold text-slate-200 uppercase">Asset Class Cross-Correlation Heatmap Matrix</span>
           </div>
-          <ReactEChart option={correlationOption} height="300px" />
+          <ReactEChart option={correlationOption} height="280px" />
         </div>
 
-        <div className="col-span-12 lg:col-span-6 finos-card">
+        <div className="col-span-12 lg:col-span-6 finos-card bg-[#151c2c] p-4 rounded border border-[#232d42]">
           <div className="flex justify-between items-center mb-3 pb-2 border-b border-[#232d42]">
             <span className="font-bold text-slate-200 uppercase">30-Day Implied Volatility Comparison (%)</span>
           </div>
-          <ReactEChart option={volatilityOption} height="300px" />
+          <ReactEChart option={volatilityOption} height="280px" />
         </div>
       </div>
 
-      {/* Orderbook Depth Simulation */}
-      <div className="finos-card">
-        <div className="flex justify-between items-center mb-3 pb-2 border-b border-[#232d42]">
-          <span className="font-bold text-slate-200 uppercase">Simulated Institutional Order Book Depth</span>
-          <span className="text-[10px] text-cyan-400 font-mono">Live L2 Tick Stream</span>
+      {/* 80+ Market Assets Table Toolbar & List */}
+      <div className="space-y-4">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-[#111622] p-3.5 rounded border border-[#232d42]">
+          <div className="relative flex-1 max-w-md">
+            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
+            <input
+              type="text"
+              placeholder="Search 80+ Market Assets by symbol or name..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-9 pr-3 py-1.5 bg-[#0d121d] border border-[#232d42] rounded text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
+            />
+          </div>
+
+          <div className="flex space-x-1 bg-[#151c2c] p-1 rounded border border-[#232d42]">
+            {(['ALL', 'INDEX', 'COMMODITY', 'FOREX', 'BOND', 'EQUITY'] as const).map((cat) => (
+              <button
+                key={cat}
+                onClick={() => setSelectedCategory(cat)}
+                className={`px-3 py-1 rounded text-[11px] font-bold transition-colors ${
+                  selectedCategory === cat
+                    ? 'bg-blue-600 text-white shadow'
+                    : 'text-slate-400 hover:text-white hover:bg-[#1e293b]'
+                }`}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs font-mono">
-          <div>
-            <span className="text-emerald-400 font-bold block mb-2">BIDS (BUY ORDERS)</span>
-            <table className="w-full text-left font-mono text-[11px]">
-              <thead>
-                <tr className="text-slate-500 border-b border-[#232d42]">
-                  <th className="py-1">Price</th>
-                  <th className="py-1">Quantity</th>
-                  <th className="py-1">Total Value</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[#1c2638]">
-                <tr><td className="py-1.5 text-emerald-400">24,580.00</td><td>142</td><td>₹34.9 L</td></tr>
-                <tr><td className="py-1.5 text-emerald-400">24,579.50</td><td>210</td><td>₹51.6 L</td></tr>
-                <tr><td className="py-1.5 text-emerald-400">24,579.00</td><td>380</td><td>₹93.4 L</td></tr>
-                <tr><td className="py-1.5 text-emerald-400">24,578.50</td><td>450</td><td>₹1.10 Cr</td></tr>
-              </tbody>
-            </table>
-          </div>
+        <div className="text-[11px] text-slate-400 flex items-center justify-between font-mono">
+          <span>Showing <strong className="text-white">{filteredAssets.length}</strong> of <strong className="text-white">{assets.length}</strong> Surveillance Assets</span>
+        </div>
 
-          <div>
-            <span className="text-red-400 font-bold block mb-2">ASKS (SELL ORDERS)</span>
-            <table className="w-full text-left font-mono text-[11px]">
-              <thead>
-                <tr className="text-slate-500 border-b border-[#232d42]">
-                  <th className="py-1">Price</th>
-                  <th className="py-1">Quantity</th>
-                  <th className="py-1">Total Value</th>
+        <div className="finos-card bg-[#111622] border border-[#232d42] rounded-md overflow-x-auto max-h-[600px] overflow-y-auto font-mono text-xs">
+          <table className="w-full text-left font-mono">
+            <thead>
+              <tr className="bg-[#151c2c] border-b border-[#232d42] text-slate-400">
+                <th className="p-3">Symbol</th>
+                <th className="p-3">Asset Description</th>
+                <th className="p-3">Category</th>
+                <th className="p-3">Last Price</th>
+                <th className="p-3">Change (24h)</th>
+                <th className="p-3">High</th>
+                <th className="p-3">Low</th>
+                <th className="p-3">Volume</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[#1c2638]">
+              {filteredAssets.map((asset) => (
+                <tr key={asset.symbol} className="hover:bg-[#182338] transition-colors">
+                  <td className="p-3 font-bold text-cyan-400">{asset.symbol}</td>
+                  <td className="p-3 text-slate-200 font-semibold">{asset.name}</td>
+                  <td className="p-3">
+                    <span className="text-[10px] bg-blue-500/10 text-blue-400 font-bold px-2 py-0.5 rounded border border-blue-500/30">
+                      {asset.category}
+                    </span>
+                  </td>
+                  <td className="p-3 font-extrabold text-white">₹{asset.price.toLocaleString()}</td>
+                  <td className="p-3">
+                    <span className={`font-bold ${asset.changePct >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                      {asset.changePct >= 0 ? '+' : ''}{asset.changePct}%
+                    </span>
+                  </td>
+                  <td className="p-3 text-slate-400">₹{asset.high.toLocaleString()}</td>
+                  <td className="p-3 text-slate-400">₹{asset.low.toLocaleString()}</td>
+                  <td className="p-3 text-slate-300 font-mono">{asset.volume}</td>
                 </tr>
-              </thead>
-              <tbody className="divide-y divide-[#1c2638]">
-                <tr><td className="py-1.5 text-red-400">24,580.50</td><td>115</td><td>₹28.2 L</td></tr>
-                <tr><td className="py-1.5 text-red-400">24,581.00</td><td>190</td><td>₹46.7 L</td></tr>
-                <tr><td className="py-1.5 text-red-400">24,581.50</td><td>310</td><td>₹76.2 L</td></tr>
-                <tr><td className="py-1.5 text-red-400">24,582.00</td><td>520</td><td>₹1.27 Cr</td></tr>
-              </tbody>
-            </table>
-          </div>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>

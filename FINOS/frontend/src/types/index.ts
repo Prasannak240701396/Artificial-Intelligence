@@ -102,3 +102,50 @@ export interface AuditLog {
   risk_rating: string;
   result: string;
 }
+
+export type UserRole = 'CEO' | 'DIRECTOR' | 'PROJECT_MANAGER' | 'OPERATIONS_MANAGER' | 'HR_MANAGER' | 'SITE_INCHARGE';
+
+export interface UserProfile {
+  id: string;
+  fullName: string;
+  email: string;
+  batchNo: string;
+  role: UserRole;
+  roleTitle: string;
+  hierarchyLevel: number; // 4: CEO, 3: Director, 2: PM / Operations / HR, 1: Site Incharge
+  avatarUrl?: string;
+  department?: string;
+}
+
+export interface ProjectDispatch {
+  id: number;
+  project_code: string;
+  title: string;
+  location: string;
+  estimated_amount: number;
+  description: string;
+  current_tier: string;
+  status: string;
+  created_by_name: string;
+  created_by_email: string;
+  created_by_batch: string;
+  timestamp: string;
+}
+
+export interface EmailLog {
+  id: number;
+  project_id?: number;
+  sender_name: string;
+  sender_email: string;
+  sender_role: string;
+  sender_batch: string;
+  recipient_name: string;
+  recipient_email: string;
+  recipient_role: string;
+  subject: string;
+  body_text: string;
+  estimated_amount: number;
+  dispatch_status: 'SENT' | 'DELIVERED' | 'ACKNOWLEDGED';
+  timestamp: string;
+}
+

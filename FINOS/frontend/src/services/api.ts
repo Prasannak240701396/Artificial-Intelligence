@@ -39,5 +39,11 @@ export const api = {
   getAuditTrail: (params?: string) => fetchApi<any>(`/audit/${params ? `?${params}` : ''}`),
   getSystemStatus: () => fetchApi<any>('/system/status'),
   getSettings: () => fetchApi<any>('/settings/'),
-  updateSettings: (data: any) => fetchApi<any>('/settings/', { method: 'POST', body: JSON.stringify(data) })
+  updateSettings: (data: any) => fetchApi<any>('/settings/', { method: 'POST', body: JSON.stringify(data) }),
+  getDispatches: () => fetchApi<any>('/dispatches/'),
+  getEmailLogs: () => fetchApi<any>('/dispatches/emails'),
+  forwardDispatch: (data: any) => fetchApi<any>('/dispatches/forward', { method: 'POST', body: JSON.stringify(data) })
 };
+
+export const apiService = api;
+

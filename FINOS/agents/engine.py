@@ -1,7 +1,7 @@
 import random
 import time
 import asyncio
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, List, Any
 from agents.agent_definitions import AGENTS_CONFIG
 
@@ -31,7 +31,7 @@ class AgenticFinanceEngine:
         self.current_stage_idx = (self.current_stage_idx + 1) % len(self.workflow_stages)
 
         active_agent = random.choice(AGENTS_CONFIG)
-        timestamp_str = datetime.utcnow().strftime("%H:%M:%S")
+        timestamp_str = datetime.now(timezone.utc).strftime("%H:%M:%S")
 
         log_messages = {
             "OBSERVE": f"Monitoring Agent ingested 14 transaction ticks; network throughput 1.2 MB/s.",

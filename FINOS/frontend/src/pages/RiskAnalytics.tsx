@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { FinancialCard } from '../components/FinancialCard';
+
 import { ReactEChart } from '../components/ReactEChart';
 import { EChartsOption } from 'echarts';
-import { ShieldAlert, AlertTriangle, Activity, BarChart2, CheckCircle2, X } from 'lucide-react';
+import { ShieldAlert, CheckCircle2, X } from 'lucide-react';
 
 interface RiskModel {
   id: string;

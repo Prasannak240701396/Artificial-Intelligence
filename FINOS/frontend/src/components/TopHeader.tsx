@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Bell, ShieldCheck, Radio, Calendar, Clock, AlertTriangle, Bot, Play, Sparkles } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Search, Bell, ShieldCheck, Radio, Calendar, Clock, AlertTriangle, LogOut } from 'lucide-react';
 import { GlobalSearchModal } from './GlobalSearchModal';
 import { AgentExecutionModal } from './AgentExecutionModal';
+import { useAuth } from '../context/AuthContext';
+
 
 interface TopHeaderProps {
   mode: string;
@@ -10,6 +13,8 @@ interface TopHeaderProps {
 }
 
 export const TopHeader: React.FC<TopHeaderProps> = ({ mode, wsConnected }) => {
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
   const [timeStr, setTimeStr] = useState<string>('');
   const [dateStr, setDateStr] = useState<string>('');
   const [showNotifications, setShowNotifications] = useState<boolean>(false);
@@ -27,6 +32,11 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ mode, wsConnected }) => {
     const interval = setInterval(updateTime, 1000);
     return () => clearInterval(interval);
   }, []);
+
+  const handleLogoutClick = () => {
+    logout();
+    navigate('/login');
+  };
 
   // Global Keyboard Shortcut listener for search (Ctrl+K or Slash or typing F)
   useEffect(() => {
@@ -72,21 +82,10 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ mode, wsConnected }) => {
 
       {/* Right Controls & Telemetry */}
       <div className="flex items-center space-x-3 sm:space-x-4">
-        {/* Top-Right Agent Execution Workflow Trigger Button */}
-        <button
-          onClick={() => setIsAgentModalOpen(true)}
-          className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white font-bold text-xs px-3 py-1.5 rounded-md flex items-center space-x-1.5 shadow-lg shadow-blue-500/20 transition-all font-mono"
-          title="Trigger FINOS Autonomous Agent Workflow"
-        >
-          <Bot className="h-4 w-4 animate-bounce" />
-          <span className="hidden sm:inline">Run Agent Workflow</span>
-          <Sparkles className="h-3.5 w-3.5 text-cyan-200" />
-        </button>
-
         {/* Mode Indicator */}
         <div className="hidden md:flex items-center space-x-2 bg-[#151c2c] border border-[#232d42] px-3 py-1 rounded-md text-xs font-mono">
           <Radio className="h-3.5 w-3.5 text-emerald-400 animate-pulse" />
-          <span className="text-emerald-400 font-semibold">{mode || 'SIMULATION MODE'}</span>
+          <span className="text-emerald-400 font-semibold">ENTERPRISE LIVE STREAM</span>
         </div>
 
         {/* Date & Time */}
@@ -143,16 +142,28 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ mode, wsConnected }) => {
           )}
         </div>
 
-        {/* User Profile */}
-        <div className="flex items-center space-x-2 pl-2 border-l border-[#232d42]">
-          <div className="h-7 w-7 rounded-full bg-blue-600/30 border border-blue-500/50 flex items-center justify-center text-blue-400 text-xs font-bold font-mono">
-            FA
+        {/* User Profile & Logout */}
+        <div className="flex items-center space-x-3 pl-2 border-l border-[#232d42]">
+          <div className="flex items-center space-x-2">
+            <div className="h-7 w-7 rounded-full bg-cyan-600/30 border border-cyan-500/50 flex items-center justify-center text-cyan-300 text-xs font-bold font-mono">
+              {user ? user.fullName.split(' ').map(n => n[0]).slice(0, 2).join('') : 'FA'}
+            </div>
+            <div className="hidden xl:block text-left text-xs font-mono">
+              <span className="block font-medium text-slate-200 leading-tight">{user ? user.fullName : 'Chief Auditor'}</span>
+              <span className="block text-[10px] text-cyan-400">{user ? `${user.role} • ${user.batchNo}` : 'FINOS ADMIN'}</span>
+            </div>
           </div>
-          <div className="hidden xl:block text-left text-xs font-mono">
-            <span className="block font-medium text-slate-200 leading-tight">Chief Auditor</span>
-            <span className="block text-[10px] text-slate-500">FINOS ADMIN</span>
-          </div>
+
+          <button
+            onClick={handleLogoutClick}
+            title="Log Out of System"
+            className="flex items-center space-x-1 bg-[#151c2c] hover:bg-red-500/20 text-slate-400 hover:text-red-400 border border-[#232d42] hover:border-red-500/40 px-2.5 py-1.5 rounded transition-all font-mono text-xs font-bold"
+          >
+            <LogOut className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Logout</span>
+          </button>
         </div>
+
       </div>
 
       {/* Global Search Modal */}

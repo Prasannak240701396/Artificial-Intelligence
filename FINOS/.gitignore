@@ -28,3 +28,5 @@ backend/finos.db
 .idea/
 .DS_Store
 Thumbs.db
+*.log
+cloudflared.exe

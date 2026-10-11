@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Bot, CheckCircle2, Loader2, Play, ShieldCheck, X, Zap } from 'lucide-react';
+import { Bot, CheckCircle2, Loader2, ShieldCheck, X } from 'lucide-react';
 
 interface AgentExecutionModalProps {
   isOpen: boolean;

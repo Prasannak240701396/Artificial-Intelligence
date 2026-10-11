@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { FinancialCard } from '../components/FinancialCard';
 import { ReactEChart } from '../components/ReactEChart';
 import { EChartsOption } from 'echarts';
-import { PieChart, DollarSign, Wallet, ShieldCheck, Activity, ArrowRight, X, Clock, Layers, BarChart2, TrendingUp } from 'lucide-react';
+import { PieChart, DollarSign, Wallet, ShieldCheck, Activity, X, Clock, Layers, TrendingUp } from 'lucide-react';
 import { mockTickService, LiveFinancialEvent } from '../services/mockTickService';
 
 export const FinancialOverview: React.FC = () => {

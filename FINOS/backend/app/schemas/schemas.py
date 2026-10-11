@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from typing import Optional, List, Any, Dict
 from datetime import datetime
 
@@ -23,8 +23,7 @@ class UserResponse(UserBase):
     id: int
     is_active: bool
     created_at: datetime
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 # Department Schemas
 class DepartmentResponse(BaseModel):
@@ -36,8 +35,7 @@ class DepartmentResponse(BaseModel):
     manager: Optional[str] = None
     risk_level: str
     created_at: datetime
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 # Account Schemas
 class AccountResponse(BaseModel):
@@ -50,8 +48,7 @@ class AccountResponse(BaseModel):
     account_type: str
     status: str
     created_at: datetime
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 # Budget Schemas
 class BudgetResponse(BaseModel):
@@ -65,8 +62,7 @@ class BudgetResponse(BaseModel):
     utilization_pct: float
     status: str
     created_at: datetime
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 # Transaction Schemas
 class TransactionBase(BaseModel):
@@ -89,8 +85,7 @@ class TransactionResponse(TransactionBase):
     status: str
     timestamp: datetime
     anomaly_reason: Optional[str] = None
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 # Market Asset Schemas
 class MarketAssetResponse(BaseModel):
@@ -105,8 +100,7 @@ class MarketAssetResponse(BaseModel):
     low_24h: float
     volume: float
     last_updated: datetime
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 # Agent Run Schemas
 class AgentRunResponse(BaseModel):
@@ -119,8 +113,7 @@ class AgentRunResponse(BaseModel):
     risk_rating: float
     events_processed: int
     execution_time_ms: float
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class AgentMessageResponse(BaseModel):
     id: int
@@ -129,8 +122,7 @@ class AgentMessageResponse(BaseModel):
     log_level: str
     message: str
     details: Optional[str] = None
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 # Audit Log Schemas
 class AuditLogResponse(BaseModel):
@@ -144,8 +136,7 @@ class AuditLogResponse(BaseModel):
     new_value: Optional[str] = None
     risk_rating: str
     result: str
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 # Dashboard Overview Payload
 class DashboardOverview(BaseModel):

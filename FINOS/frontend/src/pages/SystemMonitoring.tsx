@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Server, Activity, Database, Radio, Cpu, RefreshCw, CheckCircle2, AlertTriangle, X, Terminal } from 'lucide-react';
+import { Server, Database, Radio, CheckCircle2, X, Terminal } from 'lucide-react';
 import { ReactEChart } from '../components/ReactEChart';
 import { EChartsOption } from 'echarts';
 

@@ -13,7 +13,8 @@ from app.models.models import (
     User, Department, Account, Budget, Transaction, Payment,
     CashFlow, MarketAsset, MarketTick, PortfolioPosition, RiskEvent,
     Alert, Forecast, AgentRun, AgentMessage, AgentDecision,
-    AlgorithmRun, AuditLog, SystemEvent, FinancialReport
+    AlgorithmRun, AuditLog, SystemEvent, FinancialReport,
+    ProjectDispatch, EmailLog
 )
 from agents.agent_definitions import AGENTS_CONFIG
 
@@ -34,6 +35,79 @@ def seed_database():
         ]
         db.add_all(users)
         db.commit()
+
+        print("Seeding Initial Project Dispatches & Email Logs...")
+        p1 = ProjectDispatch(
+            project_code="PRJ-INF-2026-01",
+            title="National Highway Flyover & Metro Corridor",
+            location="Sector 18 Tech Hub & Outer Ring Corridor",
+            estimated_amount=48.50,
+            description="Construction of 6-lane elevated highway corridor, 14 metro flyover pillars, and heavy storm-water drainage bypass.",
+            current_tier="CEO",
+            status="APPROVED_BY_CEO",
+            created_by_name="Chief Executive Officer (CEO)",
+            created_by_email="ceo@finos.gov.in",
+            created_by_batch="EXEC-HQ-9041"
+        )
+        p2 = ProjectDispatch(
+            project_code="PRJ-INF-2026-02",
+            title="Smart Clean Energy Substation & Solar Farm",
+            location="North Industrial Zone, Grid Sector 4",
+            estimated_amount=24.75,
+            description="Establishment of 100MW solar grid substation, battery storage cells, and high-voltage underground cable link.",
+            current_tier="DIRECTOR",
+            status="FORWARDED_TO_DIRECTOR",
+            created_by_name="Chief Executive Officer (CEO)",
+            created_by_email="ceo@finos.gov.in",
+            created_by_batch="EXEC-HQ-9041"
+        )
+        p3 = ProjectDispatch(
+            project_code="PRJ-INF-2026-03",
+            title="Municipal Water Treatment & Smart Aqueduct",
+            location="Riverside Basin & Central District",
+            estimated_amount=16.20,
+            description="Construction of automated water filtration plant, digital pressure monitoring valves, and urban supply pipeline expansion.",
+            current_tier="PROJECT_MANAGER",
+            status="FORWARDED_TO_PROJECT_MANAGER",
+            created_by_name="Regional Director",
+            created_by_email="director.infra@finos.gov.in",
+            created_by_batch="DIR-HQ-7732"
+        )
+        db.add_all([p1, p2, p3])
+        db.commit()
+
+        # Seed initial email logs
+        e1 = EmailLog(
+            project_id=p2.id,
+            sender_name="Chief Executive Officer (CEO)",
+            sender_email="ceo@finos.gov.in",
+            sender_role="Chief Executive Officer",
+            sender_batch="EXEC-HQ-9041",
+            recipient_name="Regional Director",
+            recipient_email="director.infra@finos.gov.in",
+            recipient_role="Regional Director",
+            subject="[FINOS DISPATCH #PRJ-INF-2026-02] Construction Project Approval - Smart Clean Energy Substation",
+            body_text="OFFICIAL DISPATCH: We are starting construction of Smart Clean Energy Substation. Total Estimated Budget: ₹24.75 Cr. Site: North Industrial Zone. Please acknowledge, review phase 1 funds, and forward dispatch instructions to Project Managers.",
+            estimated_amount=24.75,
+            dispatch_status="SENT"
+        )
+        e2 = EmailLog(
+            project_id=p3.id,
+            sender_name="Regional Director",
+            sender_email="director.infra@finos.gov.in",
+            sender_role="Regional Director",
+            sender_batch="DIR-HQ-7732",
+            recipient_name="Project Operations Manager",
+            recipient_email="manager.projects@finos.gov.in",
+            recipient_role="Project Operations Manager",
+            subject="[FINOS DISPATCH #PRJ-INF-2026-03] Work Order Authorization - Municipal Water Treatment",
+            body_text="OFFICIAL FORWARD: Construction authorization received for Municipal Water Treatment & Aqueduct. Estimated Budget: ₹16.20 Cr. Location: Riverside Basin. Deploy site team lead and submit execution timeline.",
+            estimated_amount=16.20,
+            dispatch_status="SENT"
+        )
+        db.add_all([e1, e2])
+        db.commit()
+
 
         print("Seeding Departments & Accounts...")
         depts_data = [

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { FlaskConical, Play, CheckCircle2, Clock, Code, Activity, Sliders, Check } from 'lucide-react';
-import { FinancialCard } from '../components/FinancialCard';
+import { FlaskConical, Play, CheckCircle2 } from 'lucide-react';
+
 
 export const AlgorithmLab: React.FC = () => {
   const [activeTab, setActiveTab] = useState<string>('a-star');

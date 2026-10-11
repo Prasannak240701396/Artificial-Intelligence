@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Cpu, Play, CheckCircle2, AlertTriangle, ArrowRight, ShieldCheck, DollarSign, Wallet, RefreshCw } from 'lucide-react';
-import { FinancialCard } from '../components/FinancialCard';
+import { Cpu, CheckCircle2, AlertTriangle, ArrowRight, RefreshCw } from 'lucide-react';
+
 
 export const AIFinancialPlanner: React.FC = () => {
   // Input parameters for simulation

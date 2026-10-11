@@ -2,12 +2,13 @@ from fastapi import APIRouter
 from app.api.endpoints import (
     auth, dashboard, market, transactions, budgets, cash_flow,
     risk, forecasting, planner, agents, algorithms, reports,
-    audit, system, settings
+    audit, system, settings, dispatches
 )
 
 api_router = APIRouter()
 
 api_router.include_router(auth.router, prefix="/auth", tags=["Auth"])
+api_router.include_router(dispatches.router, prefix="/dispatches", tags=["Project Dispatches"])
 api_router.include_router(dashboard.router, prefix="/dashboard", tags=["Dashboard"])
 api_router.include_router(transactions.router, prefix="/transactions", tags=["Transactions"])
 api_router.include_router(budgets.router, prefix="/budgets", tags=["Budgets"])
@@ -21,3 +22,4 @@ api_router.include_router(reports.router, prefix="/reports", tags=["Reports"])
 api_router.include_router(audit.router, prefix="/audit", tags=["Audit Trail"])
 api_router.include_router(system.router, prefix="/system", tags=["System Monitoring"])
 api_router.include_router(settings.router, prefix="/settings", tags=["Settings"])
+
